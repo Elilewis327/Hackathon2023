@@ -4,8 +4,10 @@ project(GameofLife VERSION 0.1.0)
 include(CTest)
 enable_testing()
 
-include_directories(/opt/homebrew/include) #change to include for system
-link_directories(/opt/homebrew/lib) #change to the lib for your system
+
+
+#include_directories(/opt/homebrew/include) #change to include for system
+#link_directories(/opt/homebrew/lib) #change to the lib for your system
 
 include_directories(./glad/include)
 
