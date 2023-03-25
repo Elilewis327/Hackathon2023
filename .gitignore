@@ -1,5 +1,5 @@
-Makefile
-CMakeLists.txt
-*.txt
-*.cmake
-
+*
+!*.c
+!*.h
+!*.cpp
+!*.glsl
