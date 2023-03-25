@@ -24,7 +24,7 @@
 
 // significant help from docs at https://learnopengl.com/
 
-#define number_of_asteroids 500
+#define number_of_asteroids 1000
 #define WORLD_SIZE 100
 
 // global vars
@@ -482,10 +482,16 @@ void collide(Asteroid one, Asteroid two)
             if(abs(a.z - b.z) < one.size + two.size)
             {
                 glm::vec3 old_vel = one.velocity;
-                one.velocity = glm::vec3(0.0);
-                two.velocity = glm::vec3(0.0);
-                //one.velocity *= -two.velocity;
-                //two.velocity *= -old_vel;
+                old_vel.x += 0.1;
+                old_vel.y += 0.1;
+                old_vel.z += 0.1;
+                two.velocity.x += 0.1;
+                two.velocity.y += 0.1;
+                two.velocity.z += 0.1;
+                //one.velocity = glm::vec3(0.0);
+                //two.velocity = glm::vec3(0.0);
+                one.velocity *= -two.velocity * glm::vec3(two.mass, two.mass, two.mass);
+                two.velocity *= -old_vel * glm::vec3(one.mass, one.mass, one.mass);
          
             }
         }
