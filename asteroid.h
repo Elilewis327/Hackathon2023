@@ -2,10 +2,12 @@
 
 class Asteroid {
     public:
-        Asteroid(glm::vec3 location, glm::vec3 init_velocity) {
-            location = location;
-            velocity = init_velocity;
+        glm::vec3 location;
+        glm::vec3 velocity;
+
+        Asteroid(float x, float y, float z, float velx, float vely, float velz) {
+            location = glm::vec3(x, y, z);
+            velocity = glm::vec3(velx, vely, velz);
         }
         
-        glm::vec3 location, velocity;
 };

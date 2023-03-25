@@ -93,9 +93,9 @@ int main()
         return -1;
     }
 
-    glfwSetCursorPosCallback(window, mouse_callback);  
     glEnable(GL_DEPTH_TEST); 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
+    glfwSetCursorPosCallback(window, mouse_callback);  
 
     create_vaos();
     create_vbos();
@@ -117,12 +117,16 @@ int main()
     projection = glm::perspective(glm::radians(65.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
     int mpvLoc = glGetUniformLocation(shaderProgram, "mpv");
 
-    int number_of_asteroids = 10;
+    /*int number_of_asteroids = 10;
     asteroids = (Asteroid*)malloc(sizeof(Asteroid) * number_of_asteroids);
     for (int i = 0; i < number_of_asteroids; i++){
         asteroids[i] = new Asteroid(glm::vec3(1.0f * i + 5.0f, 1.0f * i + 5.0f, 1.0f * i + 5.0f), glm::vec3(0.0f));
-    }
-
+    }*/
+    
+    Asteroid a(1.0f, 1.0f, 5.0f, 0.0f, 0.0f, 0.0f);
+    std::cout << a.location[0] << std::endl;
+    std::cout << a.location[1] << std::endl;
+    std::cout << a.location[2] << std::endl;
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -142,14 +146,14 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        for(unsigned int i = 0; i < number_of_asteroids; i++)
+        //for(unsigned int i = 0; i < number_of_asteroids; i++)
         {
-            std::cout << asteroids[i].location.x << std::endl;
+           
             glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, asteroids[i].location);
-            model = glm::rotate(model, glm::radians(10.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-            model = glm::rotate(model, glm::radians(10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-            model = glm::rotate(model, glm::radians(10.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+            model = glm::translate(model, a.location);
+            //model = glm::rotate(model, glm::radians(10.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+            //model = glm::rotate(model, glm::radians(10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            //model = glm::rotate(model, glm::radians(10.0f), glm::vec3(0.0f, 0.0f, 1.0f));
             glm::mat4 mpv = projection * view * model;
             glDrawArrays(GL_TRIANGLES, 0, 36);
             glUniformMatrix4fv(mpvLoc, 1, GL_FALSE, glm::value_ptr(mpv));
@@ -169,10 +173,6 @@ int main()
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteProgram(shaderProgram);
-
-    for (int i = 0; i < number_of_asteroids; i++){
-        delete asteroids[i];
-    }
 
     free(asteroids);
 
