@@ -24,6 +24,9 @@
 
 // significant help from docs at https://learnopengl.com/
 
+#define number_of_asteroids 500
+#define WORLD_SIZE 100
+
 // global vars
 unsigned int shaderProgram;
 unsigned int VBO, VAO, LVBO;
@@ -62,6 +65,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void button_callback(GLFWwindow* window, int button, int action, int mods);
 double get_rand_in_range( float min, float max );
 void enable(unsigned int buffer, int index);
+void collide(Asteroid one, Asteroid two);
 
 int main()
 {
@@ -142,7 +146,6 @@ int main()
     int mpvLoc = glGetUniformLocation(shaderProgram, "mpv");
     int colorLoc = glGetUniformLocation(shaderProgram, "color");
 
-    int number_of_asteroids = 300;
     asteroids = (Asteroid*)malloc(sizeof(Asteroid) * number_of_asteroids);
     for (int i = 0; i < number_of_asteroids; i++){
         asteroids[i] = Asteroid(
@@ -191,7 +194,7 @@ int main()
             asteroids[i].location += asteroids[i].velocity * deltaTime;
             //asteroids[i].velocity *= 0.99f; //friction
             
-            if (glm::distance(asteroids[i].location, glm::vec3(0.0f, 0.0f, 0.0f)) > 100){
+            if (glm::distance(asteroids[i].location, glm::vec3(0.0f, 0.0f, 0.0f)) > WORLD_SIZE){
                 asteroids[i].velocity *= -1; 
             }
 
@@ -201,6 +204,12 @@ int main()
             glm::mat4 mpv = projection * view * model;            
             glUniformMatrix4fv(mpvLoc, 1, GL_FALSE, glm::value_ptr(mpv));
             glDrawArrays(GL_TRIANGLES, 0, 36);
+
+            for (int j = 0; j < number_of_asteroids; j++)
+            {
+                if (j != i)
+                    collide(asteroids[i], asteroids[j]);
+            }
          
         }
 
@@ -455,3 +464,30 @@ double get_rand_in_range( float min, float max )
     return min + scale * ( max - min );      
 }
 
+// checks for and solves asteroid collision
+//-----------------------------------------------
+void collide(Asteroid one, Asteroid two)
+{
+
+    glm::vec3 a = one.location;
+    glm::vec3 b = two.location;
+
+    //check the X axis
+    if(abs(a.x - b.x) < one.size + two.size)
+    {
+        //check the Y axis
+        if(abs(a.y - b.y) < one.size + two.size)
+        {
+            //check the Z axis
+            if(abs(a.z - b.z) < one.size + two.size)
+            {
+                glm::vec3 old_vel = one.velocity;
+                one.velocity = glm::vec3(0.0);
+                two.velocity = glm::vec3(0.0);
+                //one.velocity *= -two.velocity;
+                //two.velocity *= -old_vel;
+         
+            }
+        }
+    }
+}
