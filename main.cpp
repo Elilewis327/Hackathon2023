@@ -41,9 +41,11 @@ glm::vec3 cameraUp;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-float lastX = (int)SCR_WIDTH/2, lastY = (int)SCR_HEIGHT/2;
+double lastX = 0.0;
+double lastY = 0.0;
+
 float yaw, pitch, roll;
-bool firstMouse = true;
+bool same_click = false;
 
 Asteroid * asteroids;
 
@@ -54,11 +56,12 @@ void processInput(GLFWwindow *window);
 int compile_shaders();
 void create_vaos();
 void create_vbos();
-void bind_buffer_data(int buffer, float * vertices, int vertices_size);
+void bind_buffer_data(unsigned int buffer, int index, float size, float * vertices, int vertices_size);
 void loadShader(std::string filename, std::string &shader);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-float get_rand_in_range( float min, float max );
-
+void button_callback(GLFWwindow* window, int button, int action, int mods);
+double get_rand_in_range( float min, float max );
+void enable(unsigned int buffer, int index);
 
 int main()
 {
@@ -113,29 +116,28 @@ int main()
     //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
     // I think i found a bug in glfw 
     glfwSetCursorPosCallback(window, mouse_callback);  
+    glfwSetMouseButtonCallback(window, button_callback);
 
-    float lines[] = {0.0, 0.0, 0.0,
-                    1.0, 1.0, 1.0}; 
+    float lines[] = {-1.0, 0.0, -1.0,
+                    1.0, 0.0, 1.0}; 
 
     create_vaos();
     create_vbos();
-    bind_buffer_data(VBO, vertices, vertices_size);
-    //bind_buffer_data(LVBO, lines, 2*3);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
+    bind_buffer_data(VBO, 0, 3.0, vertices, vertices_size);
+    bind_buffer_data(LVBO, 1, 2.0, lines, 2*3);
+    enable(VBO, 0);
 
     glUseProgram(shaderProgram);
 
 
-    cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
+    cameraPos   = glm::vec3(0.0f, 5.0f,  0.0f);
     cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
     cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 
     glm::mat4 view          = glm::mat4(1.0f);
     glm::mat4 model         = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
     glm::mat4 projection    = glm::mat4(1.0f);
-    projection = glm::perspective(glm::radians(65.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(65.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 150.0f);
     
     int mpvLoc = glGetUniformLocation(shaderProgram, "mpv");
     int colorLoc = glGetUniformLocation(shaderProgram, "color");
@@ -150,8 +152,8 @@ int main()
                 get_rand_in_range(-10.0f, 10.0f), //velx
                 get_rand_in_range(-10.0f, 10.0f), //vely
                 get_rand_in_range(-10.0f, 10.0f), //velz
-                get_rand_in_range(1.0f, 5.0f), //size
-                get_rand_in_range(0.01f, 1.0f)); //density
+                get_rand_in_range(0.25f, 3.0f), //size
+                get_rand_in_range(0.0f, 1.0f)); //density
     }
     
     //Asteroid a(1.0f, 1.0f, 5.0f, 0.0f, 0.0f, -3.0f);
@@ -174,7 +176,8 @@ int main()
         // ------
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        //glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+        enable(VBO, 0);
 
         for(unsigned int i = 0; i < number_of_asteroids; i++)
         {
@@ -183,16 +186,17 @@ int main()
             model = glm::rotate(model, asteroids[i].velocity.x * asteroids[i].location.x * glm::radians(10.0f), glm::vec3(1.0f, 0.0f, 0.0f));
             model = glm::rotate(model, asteroids[i].velocity.y * asteroids[i].location.y * glm::radians(10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
             model = glm::rotate(model, asteroids[i].velocity.z * asteroids[i].location.z * glm::radians(10.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-            //model = glm::scale(model, glm::vec3(asteroids[i].size, asteroids[i].size, asteroids[i].size));            
+            model = glm::scale(model, glm::vec3(asteroids[i].size, asteroids[i].size, asteroids[i].size));            
 
             asteroids[i].location += asteroids[i].velocity * deltaTime;
             //asteroids[i].velocity *= 0.99f; //friction
             
-            if (glm::distance(asteroids[i].location, cameraPos) > 85){
+            if (glm::distance(asteroids[i].location, glm::vec3(0.0f, 0.0f, 0.0f)) > 100){
                 asteroids[i].velocity *= -1; 
             }
 
-            glUniform3fv(colorLoc, 1, glm::value_ptr(glm::vec3(asteroids[i].mass, asteroids[i].density, asteroids[i].size)));
+            // set color
+            glUniform3fv(colorLoc, 1, glm::value_ptr(glm::vec3(0.0, 0.0, 1.0-asteroids[i].density)));
 
             glm::mat4 mpv = projection * view * model;            
             glUniformMatrix4fv(mpvLoc, 1, GL_FALSE, glm::value_ptr(mpv));
@@ -200,10 +204,39 @@ int main()
          
         }
 
-        //glBindBuffer(GL_ARRAY_BUFFER, LVBO);
-        //glDrawArrays(GL_LINES, 0, 2);
-        
-        //glBindBuffer(GL_ARRAY_BUFFER, 0);
+        enable(LVBO, 1);
+        glUniform3fv(colorLoc, 1, glm::value_ptr(glm::vec3(0.9, 0.9, 0.9)));
+
+        for ( int i = -10; i < 10; i++)
+        {
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(10*i, 0, 0));
+            model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            model = glm::scale(model, glm::vec3(200.0f, 1.0f, 1.0f));
+            glm::mat4 mpv = projection * view * model;            
+            glUniformMatrix4fv(mpvLoc, 1, GL_FALSE, glm::value_ptr(mpv));
+
+            glDrawArrays(GL_LINES, 0, 2);
+        }
+         
+        for ( int i = -10; i < 10; i++)
+        {
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(0, 0, 10*i));
+            //model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            model = glm::scale(model, glm::vec3(200.0f, 1.0f, 1.0f));
+            glm::mat4 mpv = projection * view * model;            
+            glUniformMatrix4fv(mpvLoc, 1, GL_FALSE, glm::value_ptr(mpv));
+
+            glDrawArrays(GL_LINES, 0, 2);
+        }
+       
+        GLenum err;
+        while((err = glGetError()) != GL_NO_ERROR)
+        {
+            std::cerr << err << std::endl;
+        }
+
         // handle camera
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
@@ -217,7 +250,7 @@ int main()
     // ------------------------------------------------------------------------
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
-    //glDeleteBuffers(1, &LVBO);
+    glDeleteBuffers(1, &LVBO);
     glDeleteProgram(shaderProgram);
 
     free(asteroids);
@@ -231,42 +264,58 @@ int main()
 
 // Handle mouse events
 // ---------------------------------------------------------------------------------------------------------
-void mouse_callback(GLFWwindow* window, double xpos, double ypos){  
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn){  
   
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) 
+    {
+        same_click = false;
         return;
-    
-    if (firstMouse)
+    }
+
+    float xpos = static_cast<float>(xposIn);
+    float ypos = static_cast<float>(yposIn);
+
+    if (!same_click)
     {
         lastX = xpos;
         lastY = ypos;
-        firstMouse = false;
+        same_click = true;
     }
+    
 
     float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates range from bottom to top
+    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
     lastX = xpos;
     lastY = ypos;
 
-    const float sensitivity = 0.1f;
+    float sensitivity = 0.1f; // change this value to your liking
     xoffset *= sensitivity;
     yoffset *= sensitivity;
 
-    yaw   += xoffset;
+    yaw += xoffset;
     pitch += yoffset;
 
-    /*
-    if(pitch > 89.0f)
-        pitch =  89.0f;
-    if(pitch < -89.0f)
+    // make sure that when pitch is out of bounds, screen doesn't get flipped
+    if (pitch > 89.0f)
+        pitch = 89.0f;
+    if (pitch < -89.0f)
         pitch = -89.0f;
-    */
 
-    //magic
-    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    direction.y = sin(glm::radians(pitch));
-    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    cameraFront = glm::normalize(direction);
+    glm::vec3 front;
+    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front.y = sin(glm::radians(pitch));
+    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cameraFront = glm::normalize(front);
+
+}
+
+void button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (button != GLFW_MOUSE_BUTTON_LEFT)
+    {
+        same_click = false;
+        return;
+    }
 }
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
@@ -276,11 +325,11 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
     
-    const float cameraSpeed = deltaTime * 2.5f; // adjust accordingly
+    const float cameraSpeed = deltaTime * 5.0f; // adjust accordingly
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         cameraPos += cameraSpeed * cameraFront;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        cameraPos -= cameraSpeed * cameraFront;
+        cameraPos -= cameraSpeed * cameraFront ;
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
@@ -357,17 +406,25 @@ int compile_shaders(){
 
 void create_vbos(){
     glGenBuffers(1, &VBO);
-    //glGenBuffers(1, &LVBO); 
+    glGenBuffers(1, &LVBO); 
 }
 
+void enable(unsigned int buffer, int index)
+{
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glEnableVertexAttribArray(index);
+}
 
-void bind_buffer_data(int buffer, float * vertices, int vertices_size){
+void bind_buffer_data(unsigned int buffer, int index, float size, float * vertices, int vertices_size)
+{
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices_size, vertices, GL_STATIC_DRAW);
-    //glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glVertexAttribPointer(index, size, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void create_vaos(){
+void create_vaos()
+{
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
 }
@@ -392,9 +449,9 @@ std::pair<int, int> get_resolution()
 }
 
 // -------------------------------------
-float get_rand_in_range( float min, float max )
+double get_rand_in_range( float min, float max )
 {
-    float scale = rand() / (float) RAND_MAX; 
+    double scale = rand() / (float) RAND_MAX; 
     return min + scale * ( max - min );      
 }
 

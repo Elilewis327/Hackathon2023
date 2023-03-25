@@ -4,14 +4,16 @@ class Asteroid {
     public:
         glm::vec3 location;
         glm::vec3 velocity;
-        int mass, size, density;
+        float mass;
+        float size;
+        float density;
 
-        Asteroid(double x, double y, double z, float velx, float vely, float velz, float size, float density) {
+        Asteroid(double x, double y, double z, float velx, float vely, float velz, float s, float d) {
             location = glm::vec3(x, y, z);
             velocity = glm::vec3(velx, vely, velz);
-            size = size;
-            density = density;
-            mass = size * density;
+            size = s;
+            density = d;
+            mass = s * density;
         }
         
 };
